@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthLayout } from "@/components/layout/AuthLayout";
 import { Lock, User } from "lucide-react";
+import React from "react"; // Added missing import
 
 interface LoginProps {
   onLogin: (username: string) => void;
@@ -14,9 +15,29 @@ export const Login = ({ onLogin }: LoginProps) => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  // Prevent any redirects to admin dashboard
+  const preventAdminRedirects = () => {
+    // Clear any admin-related localStorage
+    localStorage.removeItem('adminAuth');
+    localStorage.removeItem('adminUser');
+    localStorage.removeItem('cashier');
+    
+    // Set cashier-specific flags
+    localStorage.setItem('cashierApp', 'true');
+    localStorage.setItem('userRole', 'cashier');
+    
+    // Ensure we're in the right app
+    if (window.location.port !== '3000') {
+      console.warn('Cashier app should run on port 3000');
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!username || !password) return;
+    
+    // Prevent admin redirects before login
+    preventAdminRedirects();
     
     setIsLoading(true);
     // Simulate login delay
@@ -30,8 +51,18 @@ export const Login = ({ onLogin }: LoginProps) => {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('currentUser');
     localStorage.removeItem('loginTime');
+    localStorage.removeItem('cashierApp');
+    localStorage.removeItem('userRole');
+    localStorage.removeItem('adminAuth');
+    localStorage.removeItem('adminUser');
+    localStorage.removeItem('cashier');
     window.location.reload();
   };
+
+  // Prevent redirects on component mount
+  React.useEffect(() => {
+    preventAdminRedirects();
+  }, []);
 
   return (
     <AuthLayout>
@@ -85,6 +116,13 @@ export const Login = ({ onLogin }: LoginProps) => {
           >
             Effacer les données de session
           </Button>
+        </div>
+        
+        {/* Clear message that this is cashier interface */}
+        <div className="text-center text-sm text-muted-foreground pt-4 border-t">
+          <p>🛒 Interface Caissier - Port 3000</p>
+          <p className="text-xs">Vous resterez dans l'interface caissier</p>
+          <p className="text-xs text-red-500">PAS de redirection vers admin dashboard</p>
         </div>
       </form>
     </AuthLayout>

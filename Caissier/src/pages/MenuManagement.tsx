@@ -70,19 +70,21 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
     image: ""
   });
 
-  const categories = [
-    "Entrées",
-    "Plats principaux", 
-    "Desserts",
-    "Boissons",
-    "Salades",
-    "Sandwiches"
-  ];
+  const [categories, setCategories] = useState<string[]>([]);
 
-  // Load menu items from server
+  // Load menu items and categories from server
   useEffect(() => {
     loadMenuItems();
   }, [currentUser]);
+
+  // Load categories after menu items are loaded
+  useEffect(() => {
+    if (menuItems.length > 0) {
+      loadCategories();
+    }
+  }, [menuItems]);
+
+
 
   // Ensure edit modal closes when editingItem is reset
   useEffect(() => {
@@ -120,6 +122,15 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
         }));
         
         setMenuItems(processedMenuData);
+        
+        // Extract categories from loaded menu items as fallback
+        if (processedMenuData.length > 0) {
+          const extractedCategories = Array.from(new Set(processedMenuData.map((item: any) => item.category)));
+          if (extractedCategories.length > 0) {
+            setCategories(extractedCategories);
+          }
+        }
+        
         toast("Menu chargé avec succès depuis le serveur");
       } else {
         throw new Error(`Server responded with status: ${response.status} - ${response.statusText}`);
@@ -167,6 +178,34 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
   const removeImage = () => {
     setFormData(prev => ({ ...prev, image: "" }));
   };
+
+  // Function to load categories from server
+  const loadCategories = async () => {
+    try {
+      const response = await fetch(`${API_BASE}/menu-items/categories/all`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        const categoryNames = data.data.map((cat: any) => cat.category);
+        setCategories(categoryNames);
+      } else {
+        console.warn('Failed to load categories from server');
+      }
+    } catch (error) {
+      console.warn('Error loading categories:', error);
+    }
+  };
+
+  // Function to add new category if it doesn't exist
+  const addNewCategory = (newCategory: string) => {
+    if (newCategory && !categories.includes(newCategory)) {
+      setCategories(prev => [...prev, newCategory]);
+      // Show success message
+      toast(`Nouvelle catégorie "${newCategory}" ajoutée avec succès!`);
+    }
+  };
+
+
 
   // Add new menu item
   const handleAddItem = async () => {
@@ -501,11 +540,11 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
 
       {/* Add Item Modal */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] w-[95vw] sm:w-auto overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Ajouter un article au menu</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3 overflow-y-auto max-h-[calc(90vh-120px)] pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 pb-4">
             <Input
               placeholder="Nom de l'article"
               value={formData.name}
@@ -523,16 +562,43 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
               value={formData.price}
               onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
             />
-            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Catégorie" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Catégorie</label>
+              <div className="flex gap-2">
+                <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Nouvelle catégorie"
+                  value={formData.category}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData(prev => ({ ...prev, category: value }));
+                    // Add to categories if it's a new one
+                    if (value && !categories.includes(value)) {
+                      addNewCategory(value);
+                    }
+                  }}
+                  className={`flex-1 ${formData.category && !categories.includes(formData.category) ? 'border-green-500 bg-green-50' : ''}`}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sélectionnez une catégorie existante ou tapez une nouvelle
+              </p>
+              {formData.category && !categories.includes(formData.category) && (
+                <div className="flex items-center gap-2 text-xs text-green-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Nouvelle catégorie : "{formData.category}"
+                </div>
+              )}
+            </div>
             
             {/* Image Upload Section */}
             <div className="space-y-2">
@@ -596,7 +662,7 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
               </label>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-4 border-t bg-white sticky bottom-0">
               <Button variant="outline" onClick={() => setIsAddModalOpen(false)} className="flex-1">
                 Annuler
               </Button>
@@ -610,11 +676,11 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
 
       {/* Edit Item Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
+        <DialogContent className="max-w-md max-h-[90vh] w-[95vw] sm:w-auto overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>Modifier l'article</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3 overflow-y-auto max-h-[calc(90vh-120px)] pr-2 scrollbar-thin scrollbar-thumb-gray-100 scrollbar-track-gray-50 pb-4">
             <Input
               placeholder="Nom de l'article"
               value={formData.name}
@@ -632,16 +698,43 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
               value={formData.price}
               onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
             />
-            <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Catégorie" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>{category}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Catégorie</label>
+              <div className="flex gap-2">
+                <Select value={formData.category} onValueChange={(value) => setFormData(prev => ({ ...prev, category: value }))}>
+                  <SelectTrigger className="flex-1">
+                    <SelectValue placeholder="Sélectionner une catégorie" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(category => (
+                      <SelectItem key={category} value={category}>{category}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Nouvelle catégorie"
+                  value={formData.category}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setFormData(prev => ({ ...prev, category: value }));
+                    // Add to categories if it's a new one
+                    if (value && !categories.includes(value)) {
+                      addNewCategory(value);
+                    }
+                  }}
+                  className={`flex-1 ${formData.category && !categories.includes(formData.category) ? 'border-green-500 bg-green-50' : ''}`}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Sélectionnez une catégorie existante ou tapez une nouvelle
+              </p>
+              {formData.category && !categories.includes(formData.category) && (
+                <div className="flex items-center gap-2 text-xs text-green-600">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Nouvelle catégorie : "{formData.category}"
+                </div>
+              )}
+            </div>
             
             {/* Image Upload Section for Edit */}
             <div className="space-y-2">
@@ -699,7 +792,7 @@ export const MenuManagement = ({ currentUser, onLogout }: MenuManagementProps) =
               </label>
             </div>
             
-            <div className="flex gap-2">
+            <div className="flex gap-2 pt-4 border-t bg-white sticky bottom-0">
               <Button variant="outline" onClick={() => setIsEditModalOpen(false)} className="flex-1">
                 Annuler
               </Button>

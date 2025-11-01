@@ -111,11 +111,7 @@ export const TableGrid = ({ tables, orders, onTableSelect }: TableGridProps) => 
             </div>
           </div>
 
-          {tableOrder?.customerName && (
-            <div className="text-sm">
-              <p className="font-medium text-foreground">{tableOrder.customerName}</p>
-            </div>
-          )}
+
 
           {tableOrder?.createdAt && (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">

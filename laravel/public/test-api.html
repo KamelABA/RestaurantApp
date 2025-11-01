@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Cashier API</title>
+</head>
+<body>
+    <h1>Test Cashier API</h1>
+    <button onclick="testGet()">Test GET /api/cashiers</button>
+    <button onclick="testPost()">Test POST /api/cashiers</button>
+    <div id="result"></div>
+
+    <script>
+        async function testGet() {
+            try {
+                const response = await fetch('http://localhost:8000/api/cashiers');
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<h3>GET Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>GET Error:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+
+        async function testPost() {
+            try {
+                const response = await fetch('http://localhost:8000/api/cashiers', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: 'Browser Test Cashier',
+                        password: 'browser123'
+                    })
+                });
+                const data = await response.json();
+                document.getElementById('result').innerHTML = '<h3>POST Result:</h3><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = '<h3>POST Error:</h3><pre>' + error.message + '</pre>';
+            }
+        }
+    </script>
+</body>
+</html>

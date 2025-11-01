@@ -1,0 +1,20 @@
+{
+  "name": "cashier-app",
+  "version": "1.0.0",
+  "description": "Restaurant Cashier Management System",
+  "scripts": {
+    "frontend": "cd frontend && npm run dev",
+    "frontend:install": "cd frontend && npm install",
+    "frontend:build": "cd frontend && npm run build",
+    "backend": "cd backend && php artisan serve",
+    "backend:install": "cd backend && composer install",
+    "dev": "concurrently \"npm run frontend\" \"npm run backend\"",
+    "install:all": "npm run frontend:install && npm run backend:install"
+  },
+  "keywords": ["restaurant", "cashier", "management", "react", "laravel"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

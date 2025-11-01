@@ -208,28 +208,7 @@ export const TableManagementModal = ({
             {getStatusBadge()}
           </div>
 
-          {/* Informations client */}
-          {table.customerName && (
-            <Card className="p-3">
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">Client:</span>
-                  <span className="font-medium">{table.customerName}</span>
-                </div>
-                {table.orderTime && (
-                  <div className="flex justify-between">
-                    <span className="text-sm text-muted-foreground">Heure:</span>
-                    <span className="text-sm">
-                      {table.orderTime.toLocaleTimeString('fr-FR', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Card>
-          )}
+
 
           {/* Détails de la commande */}
           {order && (

@@ -2,7 +2,6 @@ export interface Table {
   id: number;
   number: string;
   status: 'free' | 'occupied' | 'reserved';
-  customerName?: string;
   orderTime?: Date;
   seats: number;
 }
@@ -33,7 +32,6 @@ export interface Order {
   total: number;
   createdAt: Date;
   updatedAt: Date;
-  customerName?: string;
   phoneNumber?: string;
 }
 
